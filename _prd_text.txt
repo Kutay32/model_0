@@ -1,0 +1,564 @@
+ 
+ 
+ 
+ 
+ 
+ 
+H A R M O N I A  V I S I O N
+ 
+ 
+Product Requirements Document 
+ 
+Privacy-Preserving Federated Learning System 
+for Breast Cancer Mass Segmentation 
+ 
+ 
+ 
+Benchmark: Federated Learning vs. Centralized Training 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Versiyon: 
+1.0 
+Versiyon: 
+1.0 
+Tarih: 
+Nisan 2026 
+Durum: 
+Taslak 
+Harmonia Vision — PRD v1.0 
+Sayfa 2 
+1. Genel Bakış 
+1.1 Proje Tanımı 
+Bu proje, meme kanseri kitle (mass) segmentasyonu için gizlilik odaklı bir Federated Learning 
+(FL) sistemi geliştirmeyi hedeflemektedir. Sistem, farklı hastaneleri simüle eden dağıtık 
+düğümler üzerinde U-Net tabanlı bir segmentasyon modelini eğiterek, ham hasta verilerini 
+paylaşmadan yüksek performanslı bir global model üretmeyi amaçlamaktadır. 
+Projenin ana çıktısı, Federated Learning ile eğitilen modelin merkezi (centralized) eğitim ile elde 
+edilen modele karşı kapsamlı bir benchmark karşılaştırmasıdır. 
+1.2 Problem Tanımı 
+• 
+Sağlık verilerinin gizliliği (KVKK/GDPR) nedeniyle hastaneler arası veri paylaşımı 
+mümkün değildir. 
+• 
+Tek merkezde eğitilen modeller, farklı cihaz ve protokollerden gelen görüntülerde 
+genelleme yapamaz (domain shift). 
+• 
+Merkezi veri toplama, güvenlik riski ve yasal engeller barındırır. 
+1.3 Çözüm Yaklaşımı 
+Federated Learning ile hastanelerdeki veriler yerelde kalır; sadece model ağırlıkları merkezi 
+sunucuya iletilir. FedAvg algoritması ile bu ağırlıklar birleştirilerek global model güncellenir. 
+Böylece veri gizliliği korunurken, çoklu veri kaynağından beslenen güçlü bir model elde edilir. 
+ 
+2. Altyapı ve Ortam 
+2.1 Sunucu Mimarisi 
+Sistem, DigitalOcean üzerinde 3 adet VPS (Virtual Private Server) ile Hub-and-Spoke 
+topolojisinde kurulacaktır: 
+Sunucu 
+Rol 
+Önerilen Spec 
+VPS-1 (Server) 
+Merkezi FL sunucusu. Flower server 
+çalıştırır, FedAvg ile ağırlık birleştirme 
+yapar. 
+4 vCPU, 8 GB RAM, 80 GB 
+SSD 
+VPS-2 (Hastane A) 
+Birinci hastane simülasyonu. Yerel veri seti 
+üzerinde U-Net eğitimi yapar, güncellenmiş 
+ağırlıkları sunucuya gönderir. 
+4 vCPU, 8 GB RAM, 80 GB 
+SSD 
+Harmonia Vision — PRD v1.0 
+Sayfa 3 
+VPS-3 (Hastane B) 
+Ikinci hastane simülasyonu. Aynı süreç 
+farklı veri bölümü ile. 
+4 vCPU, 8 GB RAM, 80 GB 
+SSD 
+ 
+2.2 VPS Güvenlik Konfigürasyonu 
+Tüm VPS’ler aşağıdaki güvenlik önlemleri ile korunacaktır: 
+2.2.1 Ağ Güvenliği 
+• 
+SSH anahtar tabanlı kimlik doğrulama (parola ile giriş devre dışı) 
+• 
+SSH portu varsayılandan değiştirilecek 
+• 
+UFW (Uncomplicated Firewall) ile sadece gerekli portlar açılacak 
+• 
+Sunucular arası iletişim WireGuard VPN tüneli üzerinden gerçekleşecek 
+• 
+Flower serverın dinlediği port, sadece VPN subnet'inden erişilebilir olacak 
+• 
+Fail2Ban ile brute-force saldırılarına karşı koruma 
+2.2.2 İletişim Güvenliği 
+• 
+Tüm Flower gRPC trafiği TLS 1.3 ile şifrelenecek 
+• 
+Self-signed veya Let's Encrypt sertifikaları kullanılacak 
+• 
+Sunucu-istemci arasında karşılıklı TLS (mTLS) doğrulaması yapılacak 
+2.2.3 Sistem Sertleştirme 
+• 
+Gereksiz servisler devre dışı bırakılacak 
+• 
+Otomatik güvenlik güncellemeleri (unattended-upgrades) etkinleştirilecek 
+• 
+Root ile doğrudan SSH erişimi kapatılacak 
+• 
+Docker container'ları non-root kullanıcı ile çalıştırılacak 
+ 
+3. Veri Toplama ve Hazırlık 
+3.1 Veri Seti 
+Kaynak: CBIS-DDSM (Curated Breast Imaging Subset of Digital Database for Screening 
+Mammography) 
+Tür: Dijital mamogram görüntüleri 
+Alt Küme: Sadece mass (kitle) vakaları 
+Format: DICOM görüntüleri + ROI segmentasyon maskeleri 
+3.2 Veri Önişleme Pipeline'ı 
+Harmonia Vision — PRD v1.0 
+Sayfa 4 
+Aşağıdaki adımlar sırasıyla uygulanacaktır: 
+# 
+Adım 
+Detay 
+1 
+DICOM Dönüştürme 
+DICOM dosyaları PNG/NumPy array formatına dönüştürülecek. Piksel 
+değerleri DICOM metadata'sındaki window/level bilgisine göre 
+normalize edilecek. 
+2 
+Boyut 
+Standardizasyonu 
+Tüm görüntüler 256×256 piksel boyutuna yeniden boyutlandırılacak. 
+Maskeler aynı boyutlandırma ile nearest-neighbor interpolasyon 
+kullanılarak ölçeklenecek. 
+3 
+Piksel 
+Normalizasyonu 
+Piksel yoğunlukları [0, 1] aralığına normalize edilecek (min-max 
+normalizasyon). 
+4 
+Veri Artırma 
+Eğitim setine rastgele döndürme (±15°), yatay çevirme (horizontal flip), 
+elastik deformasyon ve parlaklık/kontrast ayarlama uygulanacak. 
+5 
+Train/Val/Test 
+Bölümleme 
+Veri seti %70 eğitim, %15 doğrulama, %15 test olarak bölünecek. 
+Bölümleme hasta bazında yapılacak (aynı hastanın görüntüleri aynı 
+sette kalacak). 
+ 
+3.3 Hastane Simülasyonu için Veri Dağılımı 
+Benchmark'ın iki farklı senaryo altında gerçekleştirilmesi planlanmıştır: 
+Senaryo 1: IID (Homojen Dağılım) 
+• 
+Eğitim verisi 2 hastaneye eşit olarak bölünür (%50 – %50). 
+• 
+Her iki hastanede benign/malignant dağılımı yaklaşık eşittir. 
+• 
+Bu senaryo, ideal koşullarda FL performansını ölçer. 
+Senaryo 2: Non-IID (Heterojen Dağılım) 
+• 
+Eğitim verisi bilerek dengesiz dağıtılır. 
+• 
+Örnek: Hastane A ağırlıklı olarak benign vakaları, Hastane B ağırlıklı olarak malignant 
+vakaları alır. 
+• 
+Bu senaryo, gerçek dünya heterojenliğini simüle eder ve FL'nin Non-IID verideki 
+performansını test eder. 
+Her iki senaryoda da test seti aynı kalır ve tüm modeller aynı test setinde değerlendirilir. 
+ 
+4. Model Mimarisi (U-Net) 
+4.1 Mimari Yapı 
+Harmonia Vision — PRD v1.0 
+Sayfa 5 
+Segmentasyon motoru olarak standart U-Net mimarisi kullanılacaktır. Mimari, encoder-
+bottleneck-decoder yapısından oluşur ve skip connection'lar ile uzamsal detay koruması sağlar. 
+Katman 
+Yapı 
+İşlev 
+Encoder (4 blok) 
+2× Conv 3×3 + BatchNorm + ReLU 
++ MaxPool 2×2 
+Hiyerarşik öznitelik çıkarma, uzamsal 
+boyut azaltma 
+Bottleneck 
+2× Conv 3×3 + BatchNorm + ReLU 
+En yüksek seviye semantik temsil 
+Decoder (4 blok) 
+TransposedConv 2×2 + Skip 
+Connection + 2× Conv 3×3 
+Uzamsal çözünürlük kurtarma, hassas 
+lokalizasyon 
+Output 
+Conv 1×1 + Sigmoid 
+Binary maske üretimi (0: arka plan, 1: 
+kitle) 
+ 
+4.2 Kayıp Fonksiyonu 
+Sınıf dengesizliğini ele almak için hibrit kayıp fonksiyonu kullanılacaktır: 
+L_total = L_BCE + L_Dice 
+• 
+Binary Cross-Entropy (BCE): Global piksel sınıflandırma doğruluğu için 
+• 
+Dice Loss: Tümör şekil örtüşme optimizasyonu için (özellikle küçük kitlelerde etkili) 
+4.3 Eğitim Hiperparametreleri 
+Parametre 
+Değer 
+Optimizer 
+Adam (lr=1e-4) 
+Batch Size 
+16 (VPS bellek kapasitesine göre ayarlanabilir) 
+Early Stopping 
+Patience: 10 epoch (validation loss'a göre) 
+Input Boyutu 
+256 × 256 × 1 (grayscale) 
+Framework 
+PyTorch 
+ 
+ 
+5. Federated Learning Sistemi 
+5.1 Framework 
+Seçilen Framework: Flower (flwr) 
+Flower, PyTorch ile native uyumlu, üretim kalitesinde bir FL framework'üdür. gRPC tabanlı 
+iletişim altyapısı sağlar ve özel strateji tanımlamaya olanak verir. 
+Harmonia Vision — PRD v1.0 
+Sayfa 6 
+5.2 FedAvg Protokolü 
+Eğitim döngüsü aşağıdaki adımlarla gerçekleşir: 
+# 
+Adım 
+Açıklama 
+1 
+Broadcast 
+Server mevcut global modeli tüm client'lara gönderir. 
+2 
+Yerel Eğitim 
+Her client, aldığı modeli kendi özel veri seti üzerinde E epoch 
+boyunca eğitir. 
+3 
+Upload 
+Client'lar güncellenmiş model ağırlıklarını VPN üzerinden server'a 
+gönderir. 
+4 
+Aggregation 
+Server, FedAvg ile ağırlıklı ortalama hesaplar: W_new = ∑(n_k/n) × 
+W_k 
+5 
+Dağıtım 
+Yeni global model client'lara geri gönderilir. 
+6 
+Convergence 
+Adımlar 1–5, global model performansı stabilize olana kadar 
+tekrarlanır. 
+ 
+5.3 FL Hiperparametreleri 
+Parametre 
+Değer 
+Client Sayısı 
+2 (Hastane A + Hastane B) 
+Yerel Epoch (E) 
+5 (round başına, ayarlanabilir) 
+Round Sayısı 
+Convergence'a kadar (sabit sayı değil) 
+Convergence Kriteri 
+Validation DSC'de ardışık 10 round boyunca anlamlı iyileşme 
+olmaması 
+Aggregation 
+FedAvg (veri büyüklüğüne göre ağırlıklı) 
+Min Fit Clients 
+2 (tüm client'lar her round'a katılır) 
+ 
+5.4 Model Ağırlık Güvenliği: Partial Homomorphic Encryption (PHE) 
+FL sürecinde client’lardan server’a iletilen model ağırlıklarına ek bir gizlilik katmanı eklemek için 
+kısmi homomorfik şifreleme (PHE) uygulanacaktır. 
+Neden Tam Homomorfik Değil? 
+• 
+Tam Homomorfik Şifreleme (FHE) hesaplama maliyeti çok yüksektir ve model ağırlıkları 
+üzerinde pratik değildir. 
+• 
+PHE (orn. Paillier), toplama işlemi üzerinde homomorfik özellik sağlar; bu FedAvg için 
+yeterlidir çünkü aggregation temelde ağırlıklı toplamadır. 
+Harmonia Vision — PRD v1.0 
+Sayfa 7 
+Uygulama Yaklaşımı 
+• 
+Kütüphane: TenSEAL veya PySyft (CKKS şeması da değerlendirilebilir) 
+• 
+Client'lar model ağırlıklarını şifreleyerek server'a gönderir 
+• 
+Server, şifreli ağırlıklar üzerinde aggregation yapar 
+• 
+Sonuç, client'lara geri gönderilmeden önce deşifrelenir 
+• 
+Benchmark'ta PHE'nin eklediği computation overhead ve iletişim maliyeti de ölçülecektir 
+ 
+6. Merkezi Eğitim (Baseline) 
+FL benchmark'ı için bir referans noktası oluşturmak üzere, aynı U-Net modeli tüm eğitim verisi 
+tek bir makinede toplanarak merkezi olarak eğitilecektir. 
+6.1 Merkezi Eğitim Koşulları 
+• 
+Aynı model mimarisi (U-Net) 
+• 
+Aynı hiperparametreler (optimizer, learning rate, loss fonksiyonu) 
+• 
+Aynı veri önişleme pipeline'ı 
+• 
+Aynı train/val/test bölümleme 
+• 
+Eğitim, convergence'a kadar (early stopping ile) 
+• 
+Tüm eğitim verisi tek VPS üzerinde birleştirilmiş olarak kullanılır 
+Bu koşullar, FL ve merkezi eğitim arasındaki farkın sadece eğitim yönteminden 
+kaynaklanmasını garanti eder. 
+ 
+7. Benchmark ve Değerlendirme 
+7.1 Değerlendirme Metrikleri 
+Model Performans Metrikleri 
+Metrik 
+Açıklama 
+Binary Accuracy 
+Piksel bazında doğru sınıflandırma oranı 
+Dice Similarity 
+Coefficient (DSC) 
+Tahmin edilen maske ile ground truth arasındaki örtüşme. Ana performans 
+metriği. 
+IoU (Intersection over 
+Union) 
+Kesişim / birleşim oranı. Segmentasyon kalitesinin doğrulanması. 
+Precision & Recall 
+False positive ve false negative analizi için. 
+Harmonia Vision — PRD v1.0 
+Sayfa 8 
+ 
+Sistem Performans Metrikleri 
+Metrik 
+Açıklama 
+Communication Cost 
+Round başına transfer edilen toplam veri boyutu (MB). PHE ile ve PHE 
+olmadan ayrı ölçülecek. 
+Training Time 
+Toplam eğitim süresi (convergence'a kadar). FL vs. merkezi 
+karşılaştırma. 
+Round Başına Süre 
+Tek bir FL round'ının ortalama süresi (yerel eğitim + iletişim + 
+aggregation). 
+Convergence Hızı 
+Hedef DSC değerine ulaşmak için gereken round/epoch sayısı. 
+PHE Overhead 
+Şifreleme/deşifreleme işlemlerinin eklediği ek süre ve hesaplama 
+maliyeti. 
+ 
+7.2 Benchmark Matrisi 
+Aşağıdaki tablo, karşılaştırılacak tüm konfigurasyonları özetlemektedir: 
+# 
+Konfigürasyon 
+Veri Dağılımı 
+PHE 
+Eğitim Tipi 
+C1 
+Merkezi Baseline 
+Tüm veri tek merkezde 
+Yok 
+Centralized 
+F1 
+FL + IID 
+50/50 homojen 
+Yok 
+Federated 
+F2 
+FL + IID + PHE 
+50/50 homojen 
+Var 
+Federated 
+F3 
+FL + Non-IID 
+Heterojen 
+Yok 
+Federated 
+F4 
+FL + Non-IID + PHE 
+Heterojen 
+Var 
+Federated 
+ 
+7.3 Beklenen Çıktılar 
+• 
+Tüm konfigurasyonlar için DSC, IoU, Accuracy değerleri tablo ve grafik olarak sunulacak 
+• 
+FL vs. Merkezi performans farkı yüzdelik olarak raporlanacak (literatürde %2–3 fark 
+beklenir) 
+• 
+IID vs. Non-IID senaryolarındaki performans düşüşü analiz edilecek 
+• 
+Communication cost ve training time grafikleri çıkarılacak 
+• 
+PHE'nin eklediği overhead ayrıca raporlanacak 
+• 
+Convergence eğrileri (DSC vs. round/epoch) tüm konfigurasyonlar için çizilecek 
+ 
+Harmonia Vision — PRD v1.0 
+Sayfa 9 
+8. Teknoloji Stack 
+Katman 
+Teknoloji 
+Açıklama 
+Derin Öğrenme 
+PyTorch 
+U-Net implementasyonu, eğitim ve 
+inference 
+Federated Learning 
+Flower (flwr) 
+FL server/client, FedAvg stratejisi, 
+gRPC iletişim 
+Homomorfik Şifreleme 
+TenSEAL / PySyft 
+PHE ile model ağırlık şifreleme 
+Veri İşleme 
+NumPy, Pillow, pydicom 
+DICOM dönüştürme, önişleme, 
+augmentation 
+Veri Artırma 
+Albumentations 
+Eğitim setine augmentation uygulama 
+VPN 
+WireGuard 
+VPS'ler arası güvenli tünel 
+Altyapı 
+DigitalOcean VPS 
+3× VPS: 1 server + 2 client 
+Konteynerizasyon 
+Docker 
+Ortam izolasyonu ve tekrarlanabilirlik 
+Versiyon Kontrol 
+Git / GitHub 
+Kod yönetimi ve işbirliği 
+Raporlama 
+Matplotlib, Seaborn 
+Benchmark grafikleri ve görselleştirme 
+ 
+ 
+9. Proje Çıktıları 
+Projenin tamamlanması sonucunda aşağıdaki çıktılar üretilecektir: 
+# 
+Çıktı 
+Açıklama 
+1 
+Benchmark Raporu 
+Tüm konfigurasyonlar için performans metrikleri, grafikler ve 
+analiz. FL vs. Centralized detaylı karşılaştırma. 
+2 
+Eğitilmiş Modeller 
+5 farklı konfigurasyonda eğitilmiş U-Net model ağırlıkları (.pt 
+dosyaları). 
+3 
+Kaynak Kod 
+Tüm pipeline'ı içeren GitHub repository: veri önişleme, 
+model, FL client/server, benchmark scriptleri. 
+4 
+Altyapı Dokümantasyonu 
+VPS kurulum rehberi, güvenlik konfigurasyonu, WireGuard 
+setup, Docker compose dosyaları. 
+5 
+Veri Hazırlık Scriptleri 
+CBIS-DDSM indirme, DICOM dönüştürme, IID/Non-IID 
+bölümleme scriptleri. 
+ 
+ 
+Harmonia Vision — PRD v1.0 
+Sayfa 10 
+10. Başarı Kriterleri 
+Kriter 
+Hedef 
+Merkezi Model DSC 
+≥ 0.80 
+FL (IID) DSC 
+Merkezi modelin DSC değerinin en fazla %5 altında 
+FL (Non-IID) DSC 
+Merkezi modelin DSC değerinin en fazla %10 altında 
+Veri Gizliliği 
+Hiçbir ham hasta verisi VPS dışına çıkmayacak 
+PHE Entegrasyonu 
+Model ağırlıkları şifreli olarak iletilebilecek 
+Altyapı Güvenliği 
+Tüm VPS'ler arası iletişim WireGuard + TLS üzerinden 
+Tekrarlanabilirlik 
+Tüm deneyler seed ile tekrarlanabilir olacak 
+ 
+ 
+11. Kısıtlar ve Riskler 
+11.1 Bilinen Kısıtlar 
+• 
+VPS kaynak limitleri nedeniyle batch size ve model büyüklüğü kısıtlı olabilir. 
+• 
+Sadece 2 client ile simülasyon yapıldığı için gerçek dünya heterojenliği tam olarak 
+yansıtılamayabilir. 
+• 
+CBIS-DDSM açık bir veri setidir; gerçek hastane verisinin çeşitliliğini tam olarak temsil 
+etmez. 
+• 
+PHE, hesaplama maliyetini artıracağından eğitim süresi uzayabilir. 
+11.2 Riskler ve Önlemler 
+Risk 
+Önlem 
+VPS belleğinin model eğitimi için yetersiz 
+kalması 
+Batch size küçültülecek, gradient accumulation 
+uygulanacak. Gerekirse VPS spec yükseltilecek. 
+Non-IID senaryoda FL convergence 
+zorluğu 
+Yerel epoch sayısı ve learning rate ayarlanacak. 
+Gerekirse FedProx gibi alternatif strateji denenecek. 
+VPS'ler arası ağ gecikmesi 
+WireGuard hafif bir VPN'dir, gecikme minimal olacaktır. 
+Round süresi metriklerde izlenecek. 
+PHE entegrasyonunda performans 
+düşüşü 
+PHE'siz ve PHE'li sonular ayrı raporlanacak. PHE kabul 
+edilemez overhead getirirse CKKS'e geçiş 
+değerlendirilecek. 
+Harmonia Vision — PRD v1.0 
+Sayfa 11 
+CBIS-DDSM veri kalitesi sorunları 
+Veri önişleme aşamasında bozuk veya eksik maskeler 
+filtrelenecek. EDA (Exploratory Data Analysis) öncelikli 
+yapılacak. 
+ 
+ 
+12. Tanım ve Kısaltmalar 
+Kısaltma 
+Açıklama 
+FL 
+Federated Learning — Dağıtık makine öğrenimi yöntemi 
+FedAvg 
+Federated Averaging — Model ağırlıklarının ağırlıklı ortalaması ile 
+birleştirilmesi 
+PHE 
+Partial Homomorphic Encryption — Kısmi homomorfik şifreleme 
+DSC 
+Dice Similarity Coefficient — Segmentasyon örtüşme metriği 
+IoU 
+Intersection over Union — Kesişim/birleşim oranı 
+BCE 
+Binary Cross-Entropy — İkili çapraz entropi kayıp fonksiyonu 
+IID 
+Independent and Identically Distributed — Homojen veri dağılımı 
+Non-IID 
+Heterojen veri dağılımı 
+CBIS-DDSM 
+Curated Breast Imaging Subset of Digital Database for Screening 
+Mammography 
+VPS 
+Virtual Private Server 
+mTLS 
+Mutual TLS — Karşılıklı TLS kimlik doğrulaması 
+KVKK 
+Kişisel Verilerin Korunması Kanunu 
+ 

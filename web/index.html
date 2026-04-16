@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Breast Lesion AI — CLIP + U-Net</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <p class="eyebrow">Capstone demo · Privacy-aware AI stack</p>
+      <h1>Breast lesion analysis</h1>
+      <p class="lede">
+        Vision–language <strong>CLIP</strong> triage plus <strong>U-Net</strong> segmentation on screening mammogram images.
+        Upload a PNG or JPEG to see predicted class probabilities and a tumor mask overlay.
+      </p>
+    </header>
+
+    <section class="panel upload-panel">
+      <div
+        class="dropzone"
+        id="dropzone"
+        tabindex="0"
+        role="button"
+        aria-label="Upload mammogram image"
+      >
+        <input type="file" id="file" accept="image/png,image/jpeg,image/jpg" hidden />
+        <div class="dropzone-inner">
+          <span class="icon" aria-hidden="true">◉</span>
+          <p><strong>Drop an image</strong> or click to browse</p>
+          <p class="hint">Max 15 MB · Works best with breast mammogram PNG or JPEG patches (e.g. CBIS-style crops)</p>
+        </div>
+      </div>
+      <p class="status" id="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel results hidden" id="results">
+      <div class="grid">
+        <div class="card">
+          <h2>Classification (CLIP)</h2>
+          <p class="pred-label" id="predLabel">—</p>
+          <ul class="bars" id="probBars"></ul>
+        </div>
+        <div class="card wide">
+          <h2>Segmentation (U-Net)</h2>
+          <div class="img-row">
+            <figure>
+              <figcaption>Overlay</figcaption>
+              <img id="imgOverlay" alt="Segmentation overlay" />
+            </figure>
+            <figure>
+              <figcaption>Binary mask</figcaption>
+              <img id="imgMask" alt="Predicted mask" />
+            </figure>
+          </div>
+          <p class="meta" id="segMeta"></p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>
+        For research and coursework presentation only — not a medical device.
+        See <code>docs/PRESENTATION_CONTEXT.md</code> for references and framing.
+      </p>
+    </footer>
+  </div>
+  <script src="/static/app.js" type="module"></script>
+</body>
+</html>

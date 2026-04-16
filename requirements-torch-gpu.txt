@@ -1,0 +1,11 @@
+# PyTorch with CUDA 12.4 (NVIDIA RTX 30/40 series on Windows).
+# Install AFTER base packages from requirements-train.txt:
+#
+#   pip install -r requirements-torch-gpu.txt
+#
+# Or one-liner:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+
+--index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0+cu124
+torchvision==0.21.0+cu124

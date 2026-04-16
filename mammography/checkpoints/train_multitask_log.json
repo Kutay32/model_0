@@ -1,0 +1,31 @@
+{
+  "best_val_dice": 0.00864,
+  "total_epochs": 1,
+  "elapsed_seconds": 23.0,
+  "args": {
+    "manifest": "mammography\\cache\\manifest_segmentation.csv",
+    "epochs": 1,
+    "batch_size": 8,
+    "lr": 0.0003,
+    "image_size": 256,
+    "encoder": "resnet34",
+    "cls_weight": 0.5,
+    "patience": 10,
+    "max_samples": 32,
+    "checkpoint_dir": ""
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.79456,
+      "train_bce_seg": 0.46155,
+      "train_dice_seg": 0.99078,
+      "train_bce_cls": 0.68447,
+      "train_total": 1.79456,
+      "val_dice": 0.00864,
+      "val_iou": 0.00437,
+      "val_cls_acc": 0.55821,
+      "lr": 0.0003
+    }
+  ]
+}

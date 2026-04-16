@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Model weights (too large for GitHub; download separately or use Git LFS)
+mammography/checkpoints/*.pth

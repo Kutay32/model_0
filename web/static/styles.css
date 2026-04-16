@@ -1,0 +1,236 @@
+:root {
+  --bg: #0c1118;
+  --panel: #141c27;
+  --border: #243044;
+  --text: #e8edf5;
+  --muted: #8b98ab;
+  --accent: #3db8ff;
+  --accent2: #7c5cff;
+  --danger: #ff6b8a;
+  --ok: #4ade80;
+  --radius: 14px;
+  --font: "DM Sans", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font);
+  background: radial-gradient(1200px 800px at 10% -10%, #1a2744 0%, var(--bg) 55%);
+  color: var(--text);
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 3rem;
+}
+
+.hero .eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--accent);
+  margin: 0 0 0.5rem;
+}
+
+.hero h1 {
+  font-size: clamp(1.75rem, 4vw, 2.35rem);
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  color: var(--muted);
+  line-height: 1.65;
+  max-width: 52ch;
+  margin: 0;
+}
+
+.lede strong {
+  color: var(--text);
+}
+
+.panel {
+  margin-top: 2rem;
+  background: linear-gradient(145deg, var(--panel), #101824);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.dropzone:hover,
+.dropzone:focus-visible {
+  border-color: var(--accent);
+  background: rgba(61, 184, 255, 0.06);
+  outline: none;
+}
+
+.dropzone-inner .icon {
+  font-size: 2rem;
+  opacity: 0.5;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.dropzone-inner .hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0.5rem 0 0;
+}
+
+.status {
+  margin: 1rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--muted);
+  min-height: 1.25rem;
+}
+
+.status.error {
+  color: var(--danger);
+}
+
+.status.ok {
+  color: var(--ok);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 840px) {
+  .grid {
+    grid-template-columns: 1fr 1.4fr;
+  }
+}
+
+.card h2 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pred-label {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 1.25rem;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bars {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bars li {
+  margin-bottom: 0.65rem;
+}
+
+.bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  margin-bottom: 0.25rem;
+}
+
+.bar-label span:last-child {
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+.bar-track {
+  height: 8px;
+  border-radius: 99px;
+  background: #1e293b;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transition: width 0.4s ease;
+}
+
+.img-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .img-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+figure {
+  margin: 0;
+}
+
+figcaption {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.img-row img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0a0f16;
+}
+
+.meta {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 1rem 0 0;
+  font-family: var(--mono);
+}
+
+.footer {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.footer code {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--accent);
+}

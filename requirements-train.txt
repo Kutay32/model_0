@@ -1,0 +1,18 @@
+# Training stack (CLIP + U-Net / UNet++ for mammography).
+# setuptools<70: OpenAI CLIP's setup.py needs pkg_resources (see pip install notes on Windows)
+
+# Core Libraries
+setuptools>=69,<70
+numpy==1.26.4
+pandas
+scikit-learn
+torch==2.6.0
+Pillow
+
+# Deep Learning Utilities
+tqdm
+albumentations==2.0.8
+segmentation-models-pytorch==0.5.0
+
+# CLIP Model (Installed directly from GitHub at a specific commit, skip this if you already followed the steps I provided in the repo for CLIP's installation)
+clip @ git+https://github.com/openai/CLIP.git@dcba3cb2e2827b402d2701e7e1c7d9fed8a20ef1
