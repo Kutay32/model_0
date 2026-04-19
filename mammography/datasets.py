@@ -39,16 +39,9 @@ class MammogramSegDataset(Dataset):
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         row = self.df.iloc[idx]
-        image = np.array(Image.open(row["image_path"]).convert("RGB"))
-        mask = np.array(Image.open(row["mask_path"]).convert("L"))
-        if mask.shape[:2] != image.shape[:2]:
-            mask = np.array(
-                Image.fromarray(mask).resize(
-                    (image.shape[1], image.shape[0]),
-                    resample=Image.NEAREST,
-                )
-            )
-        mask = (mask > 0).astype(np.uint8)
+        image = np.load(row["image_path"])
+        mask = np.load(row["mask_path"]).astype(np.uint8)
+
         aug = self.tf(image=image, mask=mask)
         x = aug["image"]
         m = aug["mask"].float().unsqueeze(0)
@@ -94,16 +87,9 @@ class MammogramMultiTaskDataset(Dataset):
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor, int]:
         row = self.df.iloc[idx]
-        image = np.array(Image.open(row["image_path"]).convert("RGB"))
-        mask = np.array(Image.open(row["mask_path"]).convert("L"))
-        if mask.shape[:2] != image.shape[:2]:
-            mask = np.array(
-                Image.fromarray(mask).resize(
-                    (image.shape[1], image.shape[0]),
-                    resample=Image.NEAREST,
-                )
-            )
-        mask = (mask > 0).astype(np.uint8)
+        image = np.load(row["image_path"])
+        mask = np.load(row["mask_path"]).astype(np.uint8)
+        
         aug = self.tf(image=image, mask=mask)
         x = aug["image"]
         m = aug["mask"].float().unsqueeze(0)
@@ -112,6 +98,23 @@ class MammogramMultiTaskDataset(Dataset):
 
 
 _LABEL_TO_IDX = {"normal": 0, "benign": 1, "malignant": 2}
+
+
+def _to_rgb_uint8_hwc(arr: np.ndarray) -> np.ndarray:
+    """H×W or H×W×1 float/uint arrays → H×W×3 uint8 for CLIP / albumentations."""
+    a = np.asarray(arr)
+    if a.ndim == 2:
+        g = a.astype(np.float32)
+        scale = 255.0 if float(g.max()) <= 1.0 + 1e-6 else 1.0
+        u8 = np.clip(g * scale, 0, 255).astype(np.uint8)
+        return np.stack([u8, u8, u8], axis=-1)
+    if a.ndim == 3 and a.shape[2] == 1:
+        return _to_rgb_uint8_hwc(a[..., 0])
+    if a.dtype != np.uint8:
+        f = a.astype(np.float32)
+        scale = 255.0 if float(f.max()) <= 1.0 + 1e-6 else 1.0
+        return np.clip(f * scale, 0, 255).astype(np.uint8)
+    return a
 
 
 class MammogramClipDataset(Dataset):
@@ -136,7 +139,12 @@ class MammogramClipDataset(Dataset):
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, int]:
         row = self.df.iloc[idx]
-        image = np.array(Image.open(row["image_path"]).convert("RGB"))
+        
+        if str(row["image_path"]).endswith(".npy"):
+            image = _to_rgb_uint8_hwc(np.load(row["image_path"]))
+        else:
+            image = np.array(Image.open(row["image_path"]).convert("RGB"))
+
         aug = self.tf(image=image)
         y = _LABEL_TO_IDX[str(row["label"]).lower()]
         return aug["image"], y

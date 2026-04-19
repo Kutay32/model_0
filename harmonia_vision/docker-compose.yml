@@ -1,0 +1,84 @@
+# Harmonia Vision — 1 Flower server + 2 hospital clients on an isolated bridge network.
+# For production, place the Docker host behind WireGuard and restrict ingress to VPN peers only.
+name: harmonia-vision
+
+services:
+  harmonia-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: harmonia-server
+    command: ["python", "-m", "harmonia_vision.server", "--host", "0.0.0.0", "--port", "8080"]
+    environment:
+      HARMONIA_ROUNDS: "5"
+      HARMONIA_MIN_CLIENTS: "2"
+      HARMONIA_PHE: "0"
+    ports:
+      - "8080:8080"
+    networks:
+      - harmonia_net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.settimeout(1); s.connect(('127.0.0.1',8080))"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  harmonia-client-a:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: harmonia-client-a
+    command:
+      [
+        "python",
+        "-m",
+        "harmonia_vision.client",
+        "--server",
+        "harmonia-server:8080",
+        "--client-key",
+        "client_a",
+        "--data-root",
+        "/data/processed",
+      ]
+    environment:
+      HARMONIA_PHE: "0"
+    volumes:
+      - ${HARMONIA_PROCESSED_HOST_PATH:-./processed_data}:/data/processed:ro
+    depends_on:
+      harmonia-server:
+        condition: service_healthy
+    networks:
+      - harmonia_net
+
+  harmonia-client-b:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: harmonia-client-b
+    command:
+      [
+        "python",
+        "-m",
+        "harmonia_vision.client",
+        "--server",
+        "harmonia-server:8080",
+        "--client-key",
+        "client_b",
+        "--data-root",
+        "/data/processed",
+      ]
+    environment:
+      HARMONIA_PHE: "0"
+    volumes:
+      - ${HARMONIA_PROCESSED_HOST_PATH:-./processed_data}:/data/processed:ro
+    depends_on:
+      harmonia-server:
+        condition: service_healthy
+    networks:
+      - harmonia_net
+
+networks:
+  harmonia_net:
+    name: harmonia_net
+    driver: bridge

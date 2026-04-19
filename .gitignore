@@ -1,6 +1,101 @@
-.venv/
+# --- Python ---
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+env/
+.env
+.env.*
+!.env.example
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+wheels/
 
-# Model weights (too large for GitHub; download separately or use Git LFS)
-mammography/checkpoints/*.pth
+# --- Test / type / lint caches ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- ML runs & caches ---
+wandb/
+mlruns/
+lightning_logs/
+.torch/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+*.joblib
+*.pickle
+*.pkl
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Editors / IDE (local only) ---
+.idea/
+*.swp
+*.swo
+*~
+
+# --- Claude Code (machine-local overrides) ---
+.claude/
+
+# --- This repo: datasets & preprocessing output (do not push to GitHub) ---
+data/
+datasets/
+dataset/
+# Typical local CBIS-DDSM extract / clone directory names
+CBIS-DDSM/
+cbis-ddsm/
+CBIS-DDSM*/
+harmonia_processed*/
+harmonia_checkpoints/
+
+# DICOM / raw imaging (never commit patient or licensed exam data)
+*.dcm
+*.dicom
+
+# Mammography pipeline cache (manifests, processed tiles, exports)
+mammography/cache/
+
+# Keep small JSON logs in checkpoints if tracked; ignore regenerated metrics.
+mammography/checkpoints/training_metrics.csv
+
+# --- Harmonia Vision ---
+harmonia_vision/dev_tls/
+
+# --- Logs & scratch dumps ---
+*.log
+*.err
+tmp/
+temp/
+*.tmp
+
+# --- Local reference / one-off extracts (not source) ---
+CBIS-DDSM_Data.pdf
+pdf_content.txt
+pdf_content_utf8.txt
+
+# --- Node (if you add a JS toolchain under web/) ---
+node_modules/

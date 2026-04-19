@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Harmonia Hub — Training & checkpoints</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="head">
+      <div>
+        <p class="eyebrow">Harmonia Vision</p>
+        <h1>Training hub</h1>
+        <p class="sub">Start or stop local benchmark runs, stream logs, and inspect checkpoints. Default data path targets <strong>full CBIS</strong> export (<code>harmonia_processed_cbis_full</code>); use smoke (<code>harmonia_processed_smoke</code>) only for quick tests.</p>
+      </div>
+      <div class="head-actions">
+        <label class="token-label" title="Optional; must match HARMONIA_HUB_TOKEN on the server">
+          Hub token
+          <input type="password" id="hubToken" placeholder="Bearer (optional)" autocomplete="off" />
+        </label>
+      </div>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Job status</h2>
+        <div id="statusBox" class="status-box">Loading…</div>
+        <div class="btn-row">
+          <button type="button" id="btnStop" class="btn danger" disabled>Stop training</button>
+          <button type="button" id="btnRefresh" class="btn ghost">Refresh</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Start training</h2>
+        <form id="startForm" class="form">
+          <label>Mode
+            <select name="mode" id="mode">
+              <option value="centralized">Centralized</option>
+              <option value="fl_iid">FL (IID data layout)</option>
+              <option value="fl_non_iid">FL (non-IID data layout)</option>
+            </select>
+          </label>
+          <label>Preset
+            <select name="preset" id="preset">
+              <option value="quick">quick (2×2)</option>
+              <option value="standard" selected>standard (5×5)</option>
+              <option value="long">long (20×10)</option>
+            </select>
+          </label>
+          <label>Data root
+            <input type="text" name="data_root" id="dataRoot" required placeholder="path to processed client_a/b" />
+            <span class="hint" id="dataRootHint"></span>
+          </label>
+          <label>Batch size <input type="number" name="batch_size" id="batchSize" value="4" min="1" max="64" /></label>
+          <label>Optional rounds <input type="number" name="rounds" id="rounds" placeholder="override preset" /></label>
+          <label>Optional local epochs <input type="number" name="local_epochs" id="local_epochs" placeholder="override preset" /></label>
+          <label>Save checkpoint (optional)
+            <input type="text" name="checkpoint" id="checkpoint" placeholder="harmonia_checkpoints/run.pth" />
+          </label>
+          <button type="submit" class="btn primary" id="btnStart">Start</button>
+        </form>
+        <p class="hint">Runs <code>python -m harmonia_vision.benchmark</code> as a subprocess on this PC. Use the same <code>PYTHONPATH</code> as the server (repo root).</p>
+      </div>
+    </section>
+
+    <section class="card full">
+      <h2>Log output</h2>
+      <pre id="logView" class="log"></pre>
+    </section>
+
+    <section class="card full">
+      <h2>Checkpoints</h2>
+      <div id="artifactsTable" class="artifacts">Loading…</div>
+    </section>
+
+    <section class="card full">
+      <h2>Quick mask preview</h2>
+      <p class="hint">Upload a grayscale-friendly mammogram patch (PNG/JPEG). Image is resized to 256×256; output is a rough U-Net mask for sanity checks—not clinical use.</p>
+      <form id="inferForm" class="form infer">
+        <label>Checkpoint
+          <select id="inferCkpt"></select>
+        </label>
+        <label class="file">
+          Image
+          <input type="file" id="inferFile" accept="image/png,image/jpeg" required />
+        </label>
+        <button type="submit" class="btn primary">Run preview</button>
+      </form>
+      <div id="inferResult" class="infer-result"></div>
+    </section>
+
+    <section class="card full">
+      <h2>Random NPY test</h2>
+      <p id="staleHubBanner" class="hint" style="display: none; color: var(--danger)"></p>
+      <p class="hint">İşlenmiş veriden (<code>client_a</code>/<code>client_b</code> altında eşleşen <code>images/*.npy</code> ve <code>masks/*.npy</code>) rastgele örnekler seçilir; Dice ve IoU gerçek maskeye göre hesaplanır.</p>
+      <form id="inferRandomForm" class="form infer">
+        <label>Checkpoint
+          <select id="inferRandomCkpt"></select>
+        </label>
+        <label>Data root
+          <input type="text" id="inferDataRoot" required placeholder="harmonia_processed_cbis_full" />
+        </label>
+        <label>Örnek sayısı <input type="number" id="inferRandomN" value="15" min="1" max="256" /></label>
+        <label>Tohum (isteğe bağlı) <input type="number" id="inferRandomSeed" placeholder="boş: rastgele" min="0" /></label>
+        <button type="submit" class="btn primary" id="btnInferRandom">15 örnekle test et</button>
+      </form>
+      <div id="inferRandomResult"></div>
+    </section>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
