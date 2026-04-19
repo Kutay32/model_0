@@ -14,7 +14,7 @@ Capstone codebase: **centralized CLIP + UNet++** training and a browser demo on 
 | **Institution** | Istinye University |
 | **Date** | January 2026 |
 | **Supervisor** | Asst. Prof. Wadhah Zeyad Tareq |
-| **Students** | Kutay ORALLI (220911791), Eyüpcan IŞIKGÖR (210911023), Berk GÜNBERK (220911759) |
+
 
 ---
 
